@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spur Gear from OD and Teeth: Full Calculator</title>
+<style>
+:root{--g:#1b7a3e;--gd:#0f4d27;--gl:#e6f4ea;--gb:#b9d8c3;--ink:#1d2b21;--mut:#4b5f52;--red:#c0392b;--blue:#2b6cb0;--cy:#17a2b8}
+*{box-sizing:border-box} body{margin:0;font-family:system-ui,Segoe UI,Arial,sans-serif;color:var(--ink);background:#f6faf7;line-height:1.45}
+header{background:var(--g);color:#fff;padding:14px 18px} header h1{margin:0;font-size:1.3rem} header p{margin:3px 0 0;font-size:.88rem;opacity:.93}
+main{max-width:1180px;margin:0 auto;padding:12px}
+.card{background:#fff;border:1px solid var(--gb);border-radius:8px;margin:12px 0;overflow:hidden}
+.card>h2{margin:0;padding:8px 12px;background:var(--gl);color:var(--gd);font-size:1rem;border-bottom:1px solid var(--gb)}
+.body{padding:10px 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+label{display:block;font-size:.8rem;color:var(--mut)} input,select{width:100%;padding:7px;border:1px solid #9bb8a5;border-radius:5px;font-size:1rem;background:#fffbe0}
+input.out{background:#f0f0f0}
+button{background:var(--g);color:#fff;border:0;border-radius:6px;padding:8px 12px;font-size:.9rem;cursor:pointer;margin:4px 6px 0 0} button.alt{background:#fff;color:var(--g);border:1px solid var(--g)}
+table{border-collapse:collapse;width:100%;font-size:.84rem} th{background:var(--g);color:#fff;padding:5px 7px;text-align:left;position:sticky;top:0}
+td{padding:4px 7px;border-bottom:1px solid #e3ede6;vertical-align:top} td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap} td.f{color:var(--mut);font-family:Consolas,monospace;font-size:.78rem}
+tr.sec td{background:var(--gl);font-weight:700;color:var(--gd)} .scroll{overflow-x:auto}
+.ok{color:#0c7a35;font-weight:600}.bad{color:var(--red);font-weight:600}.warn{color:#b26a00;font-weight:600}
+.checks div{padding:3px 0;border-bottom:1px dashed #dbe9df;font-size:.88rem}
+svg{width:100%;height:auto;display:block;background:#fff} .two{display:grid;grid-template-columns:1fr 1fr;gap:10px} @media(max-width:860px){.two{grid-template-columns:1fr}}
+.legend{font-size:.8rem;color:var(--mut);margin-top:4px} .sw{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:middle;margin:0 3px 0 8px}
+@media print{header{background:#fff;color:#000;border-bottom:2px solid var(--g)} button,.noprint{display:none}}
+</style></head><body>
+<header><h1>Spur Gear from OD and Number of Teeth</h1><p>Enter the outside diameter and teeth. Standard 20° full-depth teeth. The module is found from OD, the backlash is calculated (ISO/TR 10064-2) and applied in every cut dimension. Works offline.</p></header>
+<main>
+<div class="card"><h2>1. Inputs</h2><div class="body">
+<div class="grid">
+<div><label>Outside diameter OD = d<sub>a</sub> (mm)</label><input id="da" type="number" step="any" value="44"></div>
+<div><label>Number of teeth z</label><input id="z" type="number" step="1" value="20"></div>
+<div><label>Pressure angle α (°) standard 20</label><input id="al" type="number" step="0.1" value="20"></div>
+<div><label>Mating gear teeth z₂ (for centre distance; default = z)</label><input id="z2" type="number" step="1" value=""></div>
+<div><label>Backlash method</label><select id="bm"><option value="1">1 = ISO/TR 10064-2 (recommended)</option><option value="2">2 = rule j<sub>n</sub> = k × m</option><option value="3">3 = manual circular j<sub>t</sub></option></select></div>
+<div><label>k for method 2 (0.03 to 0.05)</label><input id="kb" type="number" step="0.001" value="0.04"></div>
+<div><label>Manual j<sub>t</sub> (mm) for method 3</label><input id="jm" type="number" step="0.001" value="0.08"></div>
+</div>
+<button onclick="run()">Calculate</button><button class="alt" onclick="ex(1)">Example: OD 44, z 20</button><button class="alt" onclick="ex(2)">Example: OD 130, z 50</button><button class="alt" onclick="ex(3)">Example: OD 60, z 28 (m = 2)</button><button class="alt" onclick="window.print()">Print / save PDF</button>
+<p class="legend">Subscripts: <b>t</b> = tip (outside) circle, <b>d</b> = pitch circle, <b>b</b> = base circle, <b>r</b> = root circle. Yellow cells are inputs.</p>
+</div></div>
+<div class="card"><h2>2. Checks</h2><div class="body checks" id="checks"></div></div>
+<div class="two"><div class="card"><h2>3. Labelled gear (to scale)</h2><div class="body"><div id="full"></div><div class="legend" id="fullnote"></div></div></div>
+<div class="card"><h2>4. One tooth gap: X, W, C on all four circles</h2><div class="body"><div id="zoom"></div><div class="legend"><span class="sw" style="background:var(--red)"></span>W gap chord <span class="sw" style="background:var(--blue)"></span>X tooth chord <span class="sw" style="background:var(--cy)"></span>C pitch chord (tooth + gap). Drawn with the backlash applied.</div></div></div></div>
+<div class="card"><h2>5. Gear size, standard tooth system and backlash</h2><div class="body scroll"><table><thead><tr><th>Quantity</th><th>Symbol</th><th>Value</th><th>Unit</th><th>Formula</th></tr></thead><tbody id="main"></tbody></table></div></div>
+<div class="card"><h2>6. Angles and chords on the four circles (theoretical tooth, no backlash)</h2><div class="body scroll"><table><thead><tr><th>Quantity</th><th>Tip (t)</th><th>Pitch (d)</th><th>Base (b)</th><th>Root (r)</th><th>Formula</th></tr></thead><tbody id="theo"></tbody></table></div></div>
+<div class="card"><h2>7. Same quantities with backlash applied (use these to draw and cut)</h2><div class="body scroll"><table><thead><tr><th>Quantity</th><th>Tip (t)</th><th>Pitch (d)</th><th>Base (b)</th><th>Root (r)</th><th>Formula</th></tr></thead><tbody id="cut"></tbody></table></div></div>
+<div class="card"><h2>8. CAD sketch points (right flank, with backlash). Origin at the gear centre, y through the middle of the gap</h2><div class="body scroll"><table><thead><tr><th>Level</th><th>Radius r</th><th>x = W/2</th><th>y = r cos θ</th></tr></thead><tbody id="pts"></tbody></table><p class="legend">The left flank is the mirror image (−x, y). Draw one 3-point arc through the tip, pitch and base points, a radial line to the root corner (if the root circle is below the base circle), mirror, close with a root arc, cut and circular-pattern z times.</p></div></div>
+<div class="card"><h2>9. How every number is found</h2><div class="body" id="how"></div></div>
+<div class="card"><h2>10. Assumptions</h2><div class="body"><ul>
+<li>External involute spur gear, 20° full-depth teeth (addendum m, dedendum 1.25 m), no profile shift, standard rack cutter.</li>
+<li>The module is found from OD: m = d<sub>a</sub> ÷ (z + 2). A non-standard result is flagged: standard modules are 1, 1.25, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10 mm.</li>
+<li>Backlash needs a centre distance, so the mating gear is assumed to have z₂ teeth (default: same as z). The calculated backlash is shared equally: each tooth is made thinner by j<sub>t</sub> ÷ 2 on the pitch circle, and the same angle is removed on every circle.</li>
+<li>Below the base circle (root circle inside it, z less than about 42) there is no involute: α<sub>r</sub> and inv α<sub>r</sub> do not exist and the flank is a radial straight line, so ψ<sub>r</sub> = ψ<sub>b</sub>.</li>
+<li>ISO/TR 10064-2 backlash formula as used in the earlier calculators; the standard itself was not opened.</li></ul></div></div>
+</main>
+<script>
+const PI=Math.PI, R=PI/180, D=180/PI, inv=a=>Math.tan(a)-a;
+const STD=[1,1.25,1.5,2,2.5,3,4,5,6,8,10,12,16,20];
+const $=id=>document.getElementById(id);
+function f(x,n=3){return (x===null||x===undefined||isNaN(x))?'–':x.toFixed(n)}
+function calc(I){
+  const al=I.al*R, z=I.z, da=I.da, m=da/(z+2), d=m*z, rp=d/2, ra=da/2, rf=rp-1.25*m, rb=rp*Math.cos(al);
+  const z2=I.z2>0?I.z2:z, a=m*(z+z2)/2;
+  const jn_iso=(2/3)*(0.06+0.0005*a+0.03*m);
+  let jn,jt;
+  if(I.bm==1){jn=jn_iso;jt=jn/Math.cos(al);} else if(I.bm==2){jn=I.kb*m;jt=jn/Math.cos(al);} else {jt=I.jm;jn=jt*Math.cos(al);}
+  const dpsi=(jt/2)/d;                         // half-angle removed on every circle
+  const psp=PI/(2*z), invA=inv(al), psb=psp+invA;
+  const circ=[['t',ra],['d',rp],['b',rb],['r',rf]].map(([k,r])=>{
+    const ratio=rb/r, hasInv=ratio<=1+1e-12;
+    const ar=hasInv?Math.acos(Math.min(1,ratio)):null, ia=hasInv?inv(ar):null;
+    const psT=hasInv?psb-ia:psb, psC=psT-dpsi;
+    const thT=PI/z-psT, thC=PI/z-psC, Dd=2*r;
+    return {k,r,D:Dd,ratio,ar,ia,psT,psC,thT,thC,
+      CT:Dd*Math.sin(PI/z), XT:Dd*Math.sin(psT),WT:Dd*Math.sin(thT),XC:Dd*Math.sin(psC),WC:Dd*Math.sin(thC),
+      sT:Dd*psT,sC:Dd*psC,eT:PI*Dd/z-Dd*psT,eC:PI*Dd/z-Dd*psC,
+      x:r*Math.sin(thC),y:r*Math.cos(thC),xT:r*Math.sin(thT),yT:r*Math.cos(thT)};
+  });
+  return {I,al,z,z2,m,d,da,rp,ra,rf,rb,a,jn_iso,jn,jt,dpsi,psp,invA,psb,circ,
+          df:2*rf,db:2*rb,ha:m,hf:1.25*m,h:2.25*m,p:PI*m,pb:PI*m*Math.cos(al),zmin:2/Math.sin(al)**2,
+          tipT:circ[0].sC};
+}
+function row(a,b,c,d,e){return `<tr><td>${a}</td><td>${b}</td><td class="n">${c}</td><td>${d}</td><td class="f">${e}</td></tr>`}
+function sec(t,span){return `<tr class="sec"><td colspan="${span}">${t}</td></tr>`}
+function render(o){
+  const stdm=STD.reduce((p,c)=>Math.abs(c-o.m)<Math.abs(p-o.m)?c:p);
+  const isStd=Math.abs(o.m-stdm)<0.0005;
+  const C=[];
+  C.push(isStd?`<div><span class="ok">OK</span> Module ${f(o.m,4)} mm is a standard module.</div>`:`<div><span class="warn">CHECK</span> Module m = ${f(o.m,4)} mm is not standard. Nearest standard module ${stdm} mm would need OD = ${f(stdm*(o.z+2),3)} mm. (Calculation continues with the exact value.)</div>`);
+  C.push(o.z>=o.zmin?`<div><span class="ok">OK</span> No undercut: z = ${o.z} ≥ z<sub>min</sub> = ${f(o.zmin,1)}.</div>`:`<div><span class="bad">CHECK</span> Undercut: z = ${o.z} is below z<sub>min</sub> = ${f(o.zmin,1)}. Use profile shift or more teeth.</div>`);
+  C.push(o.tipT>=0.25*o.m?`<div><span class="ok">OK</span> Tip thickness (arc, with backlash) ${f(o.tipT,3)} mm ≥ 0.25 m = ${f(0.25*o.m,3)} mm.</div>`:`<div><span class="bad">CHECK</span> Tip thickness ${f(o.tipT,3)} mm is below 0.25 m = ${f(0.25*o.m,3)} mm.</div>`);
+  C.push(o.rb<o.rf?`<div><span class="ok">INFO</span> Base circle is below the root circle (z ≥ 42): the flank is an involute all the way to the root, α<sub>r</sub> exists.</div>`:`<div><span class="ok">INFO</span> Root circle is inside the base circle: no involute below r<sub>b</sub>, α<sub>r</sub> and inv α<sub>r</sub> do not exist (flank is radial there).</div>`);
+  C.push(o.jt>0?`<div><span class="ok">OK</span> Backlash applied: j<sub>n</sub> = ${f(o.jn,4)} mm, j<sub>t</sub> = ${f(o.jt,4)} mm (each tooth ${f(o.jt/2,4)} mm thinner on the pitch circle).</div>`:`<div><span class="bad">CHECK</span> Backlash is zero or negative.</div>`);
+  $('checks').innerHTML=C.join('');
+  let t='';
+  t+=sec('Size and tooth system',5);
+  t+=row('Module','m',f(o.m,4),'mm','m = d<sub>a</sub> ÷ (z + 2)');
+  t+=row('Pitch circle diameter','d',f(o.d,3),'mm','d = m z');
+  t+=row('Outside diameter (given)','d<sub>a</sub>',f(o.da,3),'mm','d<sub>a</sub> = m (z + 2)');
+  t+=row('Base circle diameter','d<sub>b</sub>',f(o.db,3),'mm','d<sub>b</sub> = d cos α');
+  t+=row('Root circle diameter','d<sub>f</sub>',f(o.df,3),'mm','d<sub>f</sub> = d − 2.5 m');
+  t+=row('Addendum','h<sub>a</sub>',f(o.ha,3),'mm','h<sub>a</sub> = m');
+  t+=row('Dedendum','h<sub>f</sub>',f(o.hf,3),'mm','h<sub>f</sub> = 1.25 m');
+  t+=row('Whole depth','h',f(o.h,3),'mm','h = 2.25 m');
+  t+=row('Pressure angle','α',f(o.I.al,3),'°','standard 20°');
+  t+=row('inv α','inv α',f(o.invA,6),'rad','inv α = tan α − α');
+  t+=row('Circular pitch','p',f(o.p,4),'mm','p = π m');
+  t+=row('Base pitch','p<sub>b</sub>',f(o.pb,4),'mm','p<sub>b</sub> = π m cos α');
+  t+=row('Half-tooth angle at pitch circle','ψ<sub>p</sub>',f(o.psp*D,4),'°','ψ<sub>p</sub> = π ÷ (2z)');
+  t+=row('Half-tooth angle at base circle','ψ<sub>b</sub>',f(o.psb*D,4),'°','ψ<sub>b</sub> = ψ<sub>p</sub> + inv α');
+  t+=sec('Backlash (mating gear z₂ = '+o.z2+', centre distance a = '+f(o.a,3)+' mm)',5);
+  t+=row('Centre distance (for backlash)','a',f(o.a,3),'mm','a = m (z + z₂) ÷ 2');
+  t+=row('ISO minimum normal backlash','j<sub>n,min</sub>',f(o.jn_iso,4),'mm','j<sub>n</sub> = (2÷3)(0.06 + 0.0005 a + 0.03 m)');
+  t+=row('Normal backlash used','j<sub>n</sub>',f(o.jn,4),'mm','method chosen above');
+  t+=row('Circular backlash','j<sub>t</sub>',f(o.jt,4),'mm','j<sub>t</sub> = j<sub>n</sub> ÷ cos α');
+  t+=row('Each tooth thinner by','j<sub>t</sub>/2',f(o.jt/2,4),'mm','shared by the two gears');
+  t+=row('Half-angle removed on every circle','Δψ',f(o.dpsi*D,5),'°','Δψ = (j<sub>t</sub> ÷ 2) ÷ d');
+  t+=row('Or move shafts apart by','Δa',f(o.jt/(2*Math.tan(o.al)),4),'mm','Δa = j<sub>t</sub> ÷ (2 tan α)');
+  t+=row('Minimum teeth (undercut)','z<sub>min</sub>',f(o.zmin,2),'','z<sub>min</sub> = 2 ÷ sin²α');
+  $('main').innerHTML=t;
+  const cs=o.circ, names=['Tip','Pitch','Base','Root'];
+  const R4=(lab,fn,ff)=>`<tr><td>${lab}</td>${cs.map(c=>`<td class="n">${fn(c)}</td>`).join('')}<td class="f">${ff}</td></tr>`;
+  const NA='<span style="color:#999">none</span>';
+  let th='';
+  th+=sec('Radii and diameters',6);
+  th+=R4('Radius r',c=>f(c.r,4)+' mm','r<sub>t</sub> = d<sub>a</sub>/2; r<sub>d</sub> = d/2; r<sub>b</sub> = r<sub>d</sub> cos α; r<sub>r</sub> = d<sub>f</sub>/2');
+  th+=R4('Diameter D = 2r',c=>f(c.D,3)+' mm','D = 2 r');
+  th+=sec('Pressure angle on each circle',6);
+  th+=R4('cos α<sub>x</sub> = r<sub>b</sub> ÷ r',c=>f(c.ratio,5),'ratio of base radius to circle radius');
+  th+=R4('α<sub>x</sub> (α<sub>t</sub>, α<sub>d</sub>, α<sub>b</sub>, α<sub>r</sub>)',c=>c.ar===null?NA:f(c.ar*D,3)+'°','α<sub>x</sub> = cos⁻¹(r<sub>b</sub> ÷ r); none if r < r<sub>b</sub>');
+  th+=R4('inv α<sub>x</sub>',c=>c.ia===null?NA:f(c.ia,6),'inv α = tan α − α (rad)');
+  th+=sec('Half-tooth angle ψ and half-gap angle θ',6);
+  th+=R4('ψ<sub>x</sub> (ψ<sub>t</sub>, ψ<sub>d</sub>, ψ<sub>b</sub>, ψ<sub>r</sub>)',c=>f(c.psT*D,4)+'°','ψ = ψ<sub>p</sub> + inv α − inv α<sub>x</sub>; ψ<sub>r</sub> = ψ<sub>b</sub> if no involute');
+  th+=R4('θ<sub>x</sub> (θ<sub>t</sub>, θ<sub>d</sub>, θ<sub>b</sub>, θ<sub>r</sub>)',c=>f(c.thT*D,4)+'°','θ = π ÷ z − ψ');
+  th+=sec('Chords',6);
+  th+=R4('C<sub>x</sub> pitch chord',c=>f(c.CT,4)+' mm','C = D sin(π ÷ z)');
+  th+=R4('X<sub>x</sub> tooth chord',c=>f(c.XT,4)+' mm','X = D sin ψ');
+  th+=R4('W<sub>x</sub> gap chord',c=>f(c.WT,4)+' mm','W = D sin θ');
+  th+=sec('Arcs (for checking)',6);
+  th+=R4('Tooth arc s = D ψ',c=>f(c.sT,4)+' mm','s = D ψ');
+  th+=R4('Gap arc e = π D ÷ z − s',c=>f(c.eT,4)+' mm','e = π D ÷ z − s');
+  $('theo').innerHTML=th;
+  let c2='';
+  c2+=sec('Backlash removed: each tooth thinner by Δψ on every circle',6);
+  c2+=R4('ψ<sub>x</sub> with backlash',c=>f(c.psC*D,4)+'°','ψ<sub>c</sub> = ψ − Δψ,  Δψ = '+f(o.dpsi*D,5)+'°');
+  c2+=R4('θ<sub>x</sub> with backlash',c=>f(c.thC*D,4)+'°','θ<sub>c</sub> = π ÷ z − ψ<sub>c</sub>');
+  c2+=R4('C<sub>x</sub> pitch chord (unchanged)',c=>f(c.CT,4)+' mm','C = D sin(π ÷ z)');
+  c2+=R4('X<sub>x</sub> tooth chord',c=>f(c.XC,4)+' mm','X = D sin ψ<sub>c</sub>');
+  c2+=R4('W<sub>x</sub> gap chord',c=>f(c.WC,4)+' mm','W = D sin θ<sub>c</sub>');
+  c2+=R4('Tooth arc s',c=>f(c.sC,4)+' mm','s = D ψ<sub>c</sub>');
+  c2+=R4('Gap arc e',c=>f(c.eC,4)+' mm','e = π D ÷ z − s');
+  c2+=R4('Change in X',c=>f(c.XC-c.XT,4)+' mm','X<sub>cut</sub> − X<sub>theory</sub>');
+  c2+=R4('Change in W',c=>f(c.WC-c.WT,4)+' mm','W<sub>cut</sub> − W<sub>theory</sub>');
+  $('cut').innerHTML=c2;
+  $('pts').innerHTML=cs.map((c,i)=>{const lab=(i==3&&o.rb>=o.rf)?'Root (on the involute)':names[i]+(i==3?' corner':'');return `<tr><td>${lab}</td><td class="n">${f(c.r,3)}</td><td class="n">${f(c.x,3)}</td><td class="n">${f(c.y,3)}</td></tr>`}).join('');
+  $('how').innerHTML=how(o);
+  drawFull(o); drawZoom(o);
+}
+function how(o){
+  const c=o.circ;
+  return `<ol>
+<li><b>Module.</b> The outside circle is the pitch circle plus one addendum each side: d<sub>a</sub> = m z + 2m. So <b>m = d<sub>a</sub> ÷ (z + 2)</b> = ${f(o.da,3)} ÷ ${o.z+2} = ${f(o.m,4)} mm.</li>
+<li><b>Circles.</b> d = m z = ${f(o.d,3)}; d<sub>b</sub> = d cos α = ${f(o.db,3)}; d<sub>f</sub> = d − 2.5 m = ${f(o.df,3)}; addendum m, dedendum 1.25 m (standard full-depth rack).</li>
+<li><b>Pitches.</b> p = π m = ${f(o.p,4)}; p<sub>b</sub> = p cos α = ${f(o.pb,4)}.</li>
+<li><b>Pressure angle on each circle.</b> α<sub>x</sub> = cos⁻¹(r<sub>b</sub> ÷ r<sub>x</sub>): tip ${c[0].ar===null?'none':f(c[0].ar*D,3)+'°'}, pitch ${f(c[1].ar*D,3)}°, base 0°, root ${c[3].ar===null?'none (r<sub>r</sub> < r<sub>b</sub>)':f(c[3].ar*D,3)+'°'}. The numerator is always the base radius; on the base circle r<sub>b</sub> ÷ r<sub>b</sub> = 1, so α<sub>b</sub> = 0.</li>
+<li><b>Involute function.</b> inv α<sub>x</sub> = tan α<sub>x</sub> − α<sub>x</sub> (radians): the polar angle of the involute at that circle measured from where it starts on the base circle (string TP = r<sub>b</sub> tan α<sub>x</sub> equals the unwound arc).</li>
+<li><b>Half-tooth angle.</b> At the pitch circle tooth = gap, so ψ<sub>p</sub> = π ÷ (2z). At the base circle ψ<sub>b</sub> = ψ<sub>p</sub> + inv α. At any circle <b>ψ<sub>x</sub> = ψ<sub>p</sub> + inv α − inv α<sub>x</sub></b>. Without an involute (root, z &lt; 42) ψ<sub>r</sub> = ψ<sub>b</sub>.</li>
+<li><b>Backlash.</b> a = m (z + z₂) ÷ 2 = ${f(o.a,3)}; j<sub>n</sub> = (2÷3)(0.06 + 0.0005 a + 0.03 m) = ${f(o.jn_iso,4)}; j<sub>t</sub> = j<sub>n</sub> ÷ cos α = ${f(o.jt,4)}. Each tooth loses j<sub>t</sub>/2 on the pitch circle, i.e. an angle Δψ = (j<sub>t</sub> ÷ 2) ÷ d = ${f(o.dpsi*D,5)}°, removed on <i>every</i> circle: ψ<sub>c</sub> = ψ − Δψ. (The involute shape does not change, the whole tooth is thinned by the same angle.)</li>
+<li><b>Half-gap angle.</b> θ = π ÷ z − ψ. One pitch angle is 360° ÷ z = ${f(360/o.z,4)}°; the tooth takes 2ψ and the gap 2θ.</li>
+<li><b>Chords.</b> W = D sin θ (gap), X = D sin ψ (tooth), C = D sin(π ÷ z) (one pitch). Arc lengths: s = D ψ, e = π D ÷ z − s.</li>
+<li><b>CAD point.</b> x = r sin θ = W ÷ 2, y = r cos θ.</li></ol>`;
+}
+/* ---------- drawings ---------- */
+function gearPath(o,sc,cx,cy,rot,n){
+  const {z,rb,rf,ra}=o, psb=o.psb-o.dpsi, r0=Math.max(rb,rf);
+  const psi=r=>r>=rb?psb-inv(Math.acos(Math.min(1,rb/r))):psb;
+  const P=(r,t)=>[cx+r*sc*Math.cos(t),cy-r*sc*Math.sin(t)];
+  const pts=[];
+  for(let k=0;k<z;k++){
+    const tc=rot+2*PI*k/z;
+    if(rf<rb) pts.push(P(rf,tc-psb));
+    for(let i=0;i<=n;i++){const r=r0+(ra-r0)*i/n;pts.push(P(r,tc-psi(r)));}
+    for(let i=1;i<4;i++){pts.push(P(ra,tc-psi(ra)+2*psi(ra)*i/4));}
+    for(let i=0;i<=n;i++){const r=ra-(ra-r0)*i/n;pts.push(P(r,tc+psi(r)));}
+    if(rf<rb) pts.push(P(rf,tc+psb));
+    const pf=psi(rf), a0=tc+pf, nx=tc+2*PI/z-pf;
+    for(let i=1;i<4;i++) pts.push(P(rf,a0+(nx-a0)*i/4));
+  }
+  return 'M'+pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' L')+' Z';
+}
+const AR='<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#333"/></marker>';
+const tx=(x,y,t,c='#1d2b21',s=11,a='start',w='normal')=>`<text x="${x}" y="${y}" fill="${c}" font-size="${s}" text-anchor="${a}" font-weight="${w}" stroke="#fff" stroke-width="3" paint-order="stroke" font-family="system-ui,Arial">${t}</text>`;
+const ln=(x1,y1,x2,y2,c='#333',w=1,d='')=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${w}"${d?` stroke-dasharray="${d}"`:''}/>`;
+const cr=(cx,cy,r,c,w,d='',fill='none')=>`<circle cx="${cx}" cy="${cy}" r="${r}" stroke="${c}" stroke-width="${w}" fill="${fill}"${d?` stroke-dasharray="${d}"`:''}/>`;
+function drawFull(o){
+  const W=640,H=560, sc=185/o.ra, cx=215,cy=285;
+  let s=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${AR}`;
+  s+=`<path d="${gearPath(o,sc,cx,cy,PI/2,8)}" fill="#e6f4ea" stroke="#1b7a3e" stroke-width="1.6"/>`;
+  s+=cr(cx,cy,o.ra*sc,'#c0392b',1)+cr(cx,cy,o.rp*sc,'#1d2b21',1,'7,3,1,3')+cr(cx,cy,o.rb*sc,'#777',1,'2,3')+cr(cx,cy,o.rf*sc,'#2b6cb0',1);
+  s+=ln(cx-o.ra*sc-15,cy,cx+o.ra*sc+15,cy,'#aaa',.8,'7,3,1,3')+ln(cx,cy-o.ra*sc-15,cx,cy+o.ra*sc+15,'#aaa',.8,'7,3,1,3');
+  s+=cr(cx,cy,2.5,'#000',1,'','#000');
+  // leader labels on the right, at 4 angles
+  const L=[['t','Tip (outside) circle','#c0392b',o.ra,`Ø d<sub>a</sub> = ${f(o.da,3)}`,-62],['d','Pitch circle','#1d2b21',o.rp,`Ø d = ${f(o.d,3)}`,-30],['b','Base circle','#777',o.rb,`Ø d<sub>b</sub> = ${f(o.db,3)}`,30],['r','Root circle','#2b6cb0',o.rf,`Ø d<sub>f</sub> = ${f(o.df,3)}`,62]];
+  const strip=h=>h.replace(/<\/?sub>/g,'');
+  L.forEach(([k,nm,c,r,dd,ang],i)=>{
+    const a=ang*R, px=cx+r*sc*Math.cos(a), py=cy+r*sc*Math.sin(a)*-1*-1; // below/above axis
+    const y0=cy+Math.sin(a)*r*sc; const x0=cx+Math.cos(a)*r*sc;
+    const lx=W-190, ly=75+i*70;
+    s+=ln(x0,y0,lx-4,ly,c,1)+cr(x0,y0,3.5,c,1.5,'','#fff');
+    s+=tx(lx,ly-4,`${strip(nm)} (${k})`,c,14,'start','bold')+tx(lx,ly+13,strip(dd),c,13)+tx(lx,ly+30,`r_${k} = ${f(r,3)}`,c,13);
+  });
+  s+=tx(20,28,`z = ${o.z}   m = ${f(o.m,3)} mm   α = ${f(o.I.al,1)}°`,'#0f4d27',15,'start','bold');
+  // addendum / dedendum dims at top
+  const x1=cx-6;
+  const yA=cy-o.ra*sc,yP=cy-o.rp*sc,yF=cy-o.rf*sc;
+  s+=ln(cx+14,yA,cx+14,yP,'#333',1)+`<path d="M${cx+14},${yA} L${cx+14},${yP}" stroke="#333" fill="none" marker-start="url(#ar)" marker-end="url(#ar)"/>`+tx(cx+20,(yA+yP)/2+4,'h_a = m','#333',12);
+  s+=`<path d="M${cx+14},${yP} L${cx+14},${yF}" stroke="#333" fill="none" marker-start="url(#ar)" marker-end="url(#ar)"/>`+tx(cx+20,(yP+yF)/2+4,'h_f = 1.25 m','#333',12);
+  s+=tx(20,H-44,'Tooth profile drawn with backlash applied.','#4b5f52',12)+tx(20,H-26,'Red tip, dash-dot pitch, dotted base, blue root circle.','#4b5f52',12)+tx(20,H-8,'Top tooth shows addendum h_a and dedendum h_f.','#4b5f52',12);
+  s+='</svg>';
+  $('full').innerHTML=s; $('fullnote').textContent='Below the base circle the flank is a straight radial line when the root circle is inside it.';
+}
+function drawZoom(o){
+  const sc=Math.min(34,120/(o.ra-o.rf)), cx=380, cy=52+o.ra*sc, W=760,H=420, rot=PI/2-PI/o.z;
+  let s=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${AR}<clipPath id="cz"><rect x="0" y="0" width="${W}" height="${H-40}"/></clipPath><g clip-path="url(#cz)">`;
+  s+=`<path d="${gearPath(o,sc,cx,cy,rot,12)}" fill="#e6f4ea" stroke="#1b7a3e" stroke-width="2"/>`;
+  s+=cr(cx,cy,o.ra*sc,'#c0392b',1)+cr(cx,cy,o.rp*sc,'#1d2b21',1,'7,3,1,3')+cr(cx,cy,o.rb*sc,'#777',1,'2,3')+cr(cx,cy,o.rf*sc,'#2b6cb0',1)+'</g>';
+  s+=ln(cx,24,cx,H-44,'#999',.8,'7,3,1,3')+tx(cx,18,'gap centre line (mirror axis)','#555',12,'middle');
+  const P=(r,a)=>[cx+r*sc*Math.sin(a),cy-r*sc*Math.cos(a)];
+  const lab={t:'t',d:'d',b:'b',r:'r'};
+  o.circ.forEach(c=>{
+    const k=c.k, r=c.r, th=c.thC, ps=c.psC;
+    const a=P(r,-th), b=P(r,th), fl=P(r,-(th+2*ps));
+    const bl=(k=='r');
+    s+=ln(a[0],a[1],b[0],b[1],'#c0392b',2.6)+tx((a[0]+b[0])/2,bl?a[1]+17:a[1]-5,'W'+k,'#c0392b',15,'middle','bold');
+    s+=ln(fl[0],fl[1],a[0],a[1],'#2b6cb0',2.6)+tx((fl[0]+a[0])/2-10,(fl[1]+a[1])/2+(bl?30:14),'X'+k,'#2b6cb0',15,'middle','bold');
+    const yy=bl?18:-14; s+=ln(fl[0],fl[1]+yy,b[0],b[1]+yy,'#17a2b8',2)+ln(fl[0],fl[1]+yy-5,fl[0],fl[1]+yy+5,'#17a2b8',2)+ln(b[0],b[1]+yy-5,b[0],b[1]+yy+5,'#17a2b8',2)+tx(b[0]+10,b[1]+yy+(bl?14:-3),'C'+k,'#17a2b8',15,'start','bold');
+    [a,b].forEach(q=>s+=cr(q[0],q[1],3.5,'#c0392b',1.5,'','#fff'));
+  });
+  // circle labels left
+  const LB=[['t',o.ra,'#c0392b','tip circle'],['d',o.rp,'#1d2b21','pitch circle'],['b',o.rb,'#777','base circle'],['r',o.rf,'#2b6cb0','root circle']];
+  let lastY=-99; LB.forEach(([k,r,c,n],i)=>{let y=cy-r*sc-2; if(y<lastY+15) y=lastY+15; lastY=y; s+=tx(8,y,`${n} (${k}): Ø${f(2*r,3)}`,c,12)});
+  s+=tx(12,H-24,'Right flank point of each circle: x = W/2, y = r cos θ.  Angles: ψ half-tooth, θ half-gap, ψ + θ = π ÷ z.','#4b5f52',11)+tx(12,H-8,'Level letters: t tip, d pitch, b base, r root (root: radial line below the base circle when r<sub>r</sub> < r<sub>b</sub>)'.replace(/<\/?sub>/g,''),'#4b5f52',11);
+  s+='</svg>'; $('zoom').innerHTML=s;
+}
+function readI(){return {da:+$('da').value,z:Math.round(+$('z').value),al:+$('al').value,z2:Math.round(+$('z2').value)||0,bm:+$('bm').value,kb:+$('kb').value,jm:+$('jm').value}}
+function run(){const I=readI(); if(!(I.da>0&&I.z>=6&&I.al>5&&I.al<35)){$('checks').innerHTML='<div class="bad">Enter OD &gt; 0, teeth ≥ 6 and α between 5° and 35°.</div>';return;} render(calc(I));}
+function ex(n){const E={1:[44,20],2:[130,50],3:[60,28]}[n];$('da').value=E[0];$('z').value=E[1];$('al').value=20;$('z2').value='';run();}
+if(typeof window!=='undefined'){ex(1);} 
+if(typeof module!=='undefined') module.exports={calc};
+</script></body></html>
